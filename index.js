@@ -43,20 +43,26 @@ function generateBet365Token() {
           { then: (f) => f({ state: 'prompt', onchange: null }) });
       });
 
-      await page.goto('https://www.bet365.com');
-      await page.waitForRequest((req) => {
+      const gotoPromise = page.goto('https://www.bet365.com');
+      const reqPromise = page.waitForRequest((req) => {
         if (req.url().includes('SportsBook')) {
-          bet365.headers = {
-            'User-Agent': req.headers()['user-agent'],
-            Referer: req.headers().referer,
-            'X-Net-Sync-Term': req.headers()['x-net-sync-term'],
-          };
           return true;
         }
       });
-      bet365.cookies = await page.cookies();
-      console.log(`${new Date()} - generate bet365 values`);
-      await browser.close();
+      let g, req;
+      try {
+        [g, req] = await Promise.all([gotoPromise, reqPromise])
+        bet365.headers = {
+          'User-Agent': req.headers()['user-agent'],
+          Referer: req.headers().referer,
+          'X-Net-Sync-Term': req.headers()['x-net-sync-term'],
+        };
+        bet365.cookies = await page.cookies();
+        console.log(`${new Date()} - generate bet365 values`);
+      }
+      finally {
+        await browser.close();
+      }
     });
 }
 
